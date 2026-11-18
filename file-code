@@ -1,0 +1,129 @@
+/*
+ * ============================================================
+ * PROJECT IoT - SISTEM MONITORING SUHU & DETEKSI GERAKAN
+ * ============================================================
+ * Mata Kuliah : Internet of Things
+ * Semester    : 5
+ * Komponen    : ESP32, DHT22, PIR Sensor
+ * 
+ * Deskripsi:
+ * Sistem ini membaca suhu & kelembapan dari DHT22 dan
+ * mendeteksi gerakan menggunakan sensor PIR. Data ditampilkan
+ * di Serial Monitor dan dikirim melalui WiFi.
+ * ============================================================
+ */
+
+#include <WiFi.h>
+#include <DHT.h>
+
+// ============ KONFIGURASI WIFI ============
+const char* ssid     = "LabIoTUNISA";      // Ganti dengan SSID WiFi
+const char* password = "12345678";   // Ganti dengan password WiFi
+
+// ============ KONFIGURASI PIN ============
+#define DHTPIN    4          // DHT22 terhubung ke GPIO 4
+#define DHTTYPE   DHT22      // Tipe sensor DHT
+#define PIRPIN    15         // PIR terhubung ke GPIO 15
+
+// ============ INISIALISASI SENSOR ============
+DHT dht(DHTPIN, DHTTYPE);
+
+// ============ VARIABEL ============
+float suhu, kelembapan;
+int   gerakan;
+unsigned long lastReadTime = 0;
+const unsigned long READ_INTERVAL = 2000; // Baca sensor tiap 2 detik
+
+// ============ FUNGSI SETUP ============
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  
+  Serial.println("\n========================================");
+  Serial.println("  SISTEM MONITORING SUHU & GERAKAN");
+  Serial.println("  ESP32 + DHT22 + PIR Sensor");
+  Serial.println("========================================\n");
+
+  // Inisialisasi sensor
+  dht.begin();
+  pinMode(PIRPIN, INPUT);
+
+  // Koneksi ke WiFi
+  Serial.print("[WiFi] Menghubungkan ke ");
+  Serial.println(ssid);
+  
+  WiFi.begin(ssid, password);
+  
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+    delay(500);
+    Serial.print(".");
+    attempts++;
+  }
+  
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\n[WiFi] ✓ Terhubung!");
+    Serial.print("[WiFi] IP Address: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("\n[WiFi] ✗ Gagal terhubung (mode offline)");
+  }
+  
+  Serial.println("\n[System] Sistem siap. Memulai pembacaan...\n");
+}
+
+// ============ FUNGSI LOOP ============
+void loop() {
+  unsigned long currentTime = millis();
+  
+  // Baca sensor setiap READ_INTERVAL
+  if (currentTime - lastReadTime >= READ_INTERVAL) {
+    lastReadTime = currentTime;
+    
+    // ---- Baca DHT22 ----
+    suhu = dht.readTemperature();
+    kelembapan = dht.readHumidity();
+    
+    // ---- Baca PIR ----
+    gerakan = digitalRead(PIRPIN);
+    
+    // ---- Validasi pembacaan DHT ----
+    if (isnan(suhu) || isnan(kelembapan)) {
+      Serial.println("[DHT22] ✗ Gagal membaca sensor!");
+    } else {
+      // ---- Tampilkan Data ke Serial Monitor ----
+      Serial.println("----------------------------------------");
+      Serial.print("[DHT22] Suhu       : ");
+      Serial.print(suhu);
+      Serial.println(" °C");
+      
+      Serial.print("[DHT22] Kelembapan : ");
+      Serial.print(kelembapan);
+      Serial.println(" %");
+      
+      Serial.print("[PIR]   Gerakan    : ");
+      if (gerakan == HIGH) {
+        Serial.println("TERDETEKSI ✓");
+      } else {
+        Serial.println("Tidak ada");
+      }
+      
+      // ---- Logika Sistem ----
+      // Contoh: Peringatan jika suhu tinggi DAN ada gerakan
+      if (suhu > 35.0 && gerakan == HIGH) {
+        Serial.println("[ALERT] ⚠ Suhu tinggi + gerakan terdeteksi!");
+      }
+      
+      // ---- Status WiFi ----
+      if (WiFi.status() == WL_CONNECTED) {
+        Serial.print("[WiFi]  Status     : Terhubung (");
+        Serial.print(WiFi.RSSI());
+        Serial.println(" dBm)");
+      } else {
+        Serial.println("[WiFi]  Status     : Offline");
+      }
+      
+      Serial.println("----------------------------------------\n");
+    }
+  }
+}
