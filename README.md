@@ -21,10 +21,10 @@ Proyek Internet of Things (IoT) ini dibuat untuk memenuhi tugas Responsi 1 Mata 
 ## 🖼️ Dokumentasi Hardware
 Berikut adalah bentuk fisik dari rangkaian yang telah dibuat:
 
-![[esp.jpeg]]
+![Dokumentasi Hardware](esp.jpeg)
 ## 📊 Hasil Pengujian (Serial Monitor)
 Berikut adalah bukti bahwa sistem berjalan dengan baik. Sensor membaca suhu/kelembapan, mendeteksi gerakan, dan terhubung ke WiFi:
-![[hasil.png]]
+![Hasil Serial Monitor](hasil.png)
 
 ## ⚙️ Alur Kerja Sistem (Logika)
 1. **Inisialisasi:** ESP32 menyalakan sensor DHT22 dan PIR, lalu terhubung ke jaringan WiFi.
